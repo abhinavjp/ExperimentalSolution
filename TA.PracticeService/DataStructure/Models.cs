@@ -152,4 +152,16 @@ namespace TA.PracticeService.DataStructure
             }
         }
     }
+    public class Queue
+    {
+        public int Front;
+        public int Rear;
+        public int[] items;
+        public Queue(int queueCapacity)
+        {
+            Front = 0;
+            Rear = -1;
+            items = new int[queueCapacity];
+        }
+    }
 }

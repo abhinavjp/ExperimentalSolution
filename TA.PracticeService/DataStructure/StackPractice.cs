@@ -32,8 +32,6 @@ namespace TA.PracticeService.DataStructure
             var peekedElement = stack.Peek();
             Console.WriteLine($"Peeked Element: {peekedElement}");
             stack.Display();
-
-            Console.ReadKey();
         }
     }
 }
