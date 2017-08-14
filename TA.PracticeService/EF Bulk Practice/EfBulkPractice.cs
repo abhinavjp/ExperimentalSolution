@@ -15,7 +15,7 @@ namespace TA.PracticeService.EF_Bulk_Practice
         {
             try
             {
-                using (var scope = new TransactionScope(TransactionScopeOption.Suppress))
+                using (var scope = new TransactionScope(TransactionScopeOption.Required, new TransactionOptions { IsolationLevel = IsolationLevel.ReadCommitted, Timeout = TimeSpan.FromSeconds(180) }))
                 {
                     try
                     {
@@ -36,13 +36,11 @@ namespace TA.PracticeService.EF_Bulk_Practice
                             InsertDepartments(context, records);
                         }
                         scope.Complete();
-                        scope.Dispose();
                     }
                     catch (TransactionAbortedException)
                     {
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
                         Console.Write("Oh No!!!! Error while disposing transaction");
-                        scope.Dispose();
                     }
                 }
             }

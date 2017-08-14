@@ -41,6 +41,7 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
+    <Reference Include="System.configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Runtime.Serialization" />
     <Reference Include="System.Security" />
@@ -60,6 +61,8 @@
     <Compile Include="DataStructure\Models.cs" />
     <Compile Include="DataStructure\QueuePractice.cs" />
     <Compile Include="DataStructure\StackPractice.cs" />
+    <Compile Include="DbHelperPractice\DatabaseFactorySectionHandler.cs" />
+    <Compile Include="DbHelperPractice\DatabaseQueryRepository.cs" />
     <Compile Include="EF Bulk Practice\EfBulkPractice.cs" />
     <Compile Include="EF Bulk Practice\Models\Department.cs" />
     <Compile Include="EF Bulk Practice\Models\Employee.cs" />
