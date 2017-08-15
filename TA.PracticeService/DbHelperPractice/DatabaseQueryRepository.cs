@@ -11,7 +11,7 @@ namespace TA.PracticeService.DbHelperPractice
 {
     public class DatabaseQueryRepository : IDisposable
     {
-        private string _dataProvider;
+        private readonly string _dataProvider;
         private DbProviderFactory _dbFactory;
         public string ConnectionString
         {
@@ -57,6 +57,7 @@ namespace TA.PracticeService.DbHelperPractice
             }
         }
 
+        #region Constructors
         public DatabaseQueryRepository(string dataProvider)
         {
             _dataProvider = dataProvider;
@@ -68,6 +69,13 @@ namespace TA.PracticeService.DbHelperPractice
             ConnectionString = connectionString;
         }
 
+        public DatabaseQueryRepository(DbProviderFactory dataFactory)
+        {
+            _dbFactory = dataFactory;
+        } 
+        #endregion
+
+        #region Connection Preparation
         public IDbConnection PrepareConnection()
         {
             return PrepareConnection(string.Empty);
@@ -87,7 +95,9 @@ namespace TA.PracticeService.DbHelperPractice
             DbConnection = dbConnection;
             return DbConnection;
         }
+        #endregion
 
+        #region Command Preparation
         public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
             IDbConnection connection, IDbTransaction transaction)
         {
@@ -159,6 +169,7 @@ namespace TA.PracticeService.DbHelperPractice
             PrepareCommand(string.Empty, CommandType.Text, -1, default(IDbConnection), null);
         }
 
+        #region SpCommand Preparation
         public void PrepareStoredProcedureCommand(string commandText, int commandTimeout,
             IDbConnection connection, IDbTransaction transaction)
         {
@@ -190,7 +201,10 @@ namespace TA.PracticeService.DbHelperPractice
         {
             PrepareStoredProcedureCommand(string.Empty, -1, null, null);
         }
+        #endregion
+        #endregion
 
+        #region Parameter
         public IDbDataParameter AddParameter(string parameterName, object value)
         {
             return AddParameter(parameterName, value, null, null);
@@ -224,6 +238,21 @@ namespace TA.PracticeService.DbHelperPractice
                 parameter.Direction = direction.Value;
             return parameter;
         }
+
+        public void AddParameter(IDbDataParameter parameter)
+        {
+            var commandParameter = DbCommand.CreateParameter();
+            commandParameter = parameter;
+        }
+
+        public void AddParameter(IEnumerable<IDbDataParameter> parameters)
+        {
+            foreach(var parameter in parameters)
+            {
+                AddParameter(parameter);
+            }
+        }
+        #endregion
 
         public int ExecuteNonQuery()
         {
