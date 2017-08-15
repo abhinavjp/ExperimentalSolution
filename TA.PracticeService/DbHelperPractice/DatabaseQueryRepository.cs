@@ -9,7 +9,7 @@ using System.Configuration;
 
 namespace TA.PracticeService.DbHelperPractice
 {
-    public class DatabaseQueryRepository: IDisposable
+    public class DatabaseQueryRepository : IDisposable
     {
         private string _dataProvider;
         private DbProviderFactory _dbFactory;
@@ -77,7 +77,8 @@ namespace TA.PracticeService.DbHelperPractice
         {
             DbConnection = _dbFactory.CreateConnection();
             ConnectionString = connectionString;
-            DbConnection.ConnectionString = ConnectionString;
+            if (!string.IsNullOrWhiteSpace(connectionString))
+                DbConnection.ConnectionString = ConnectionString;
             return DbConnection;
         }
 
@@ -102,9 +103,23 @@ namespace TA.PracticeService.DbHelperPractice
         }
 
         public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
+            IDbConnection connection)
+        {
+            PrepareCommand(commandText, commandType, commandTimeout, connection, null);
+        }
+
+        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
+            IDbTransaction transaction)
+        {
+            PrepareCommand(commandText, commandType, commandTimeout, null, null, transaction);
+        }
+
+        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
             IEnumerable<IDbDataParameter> parameters, IDbConnection connection, IDbTransaction transaction)
         {
             PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
+            if (parameters == null || !parameters.Any())
+                return;
             foreach (var parameter in parameters)
             {
                 var commandParameter = DbCommand.CreateParameter();
@@ -112,24 +127,36 @@ namespace TA.PracticeService.DbHelperPractice
             }
         }
 
+        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
+            IEnumerable<IDbDataParameter> parameters, IDbConnection connection)
+        {
+            PrepareCommand(commandText, commandType, commandTimeout, parameters, connection, null);
+        }
+
+        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
+            IEnumerable<IDbDataParameter> parameters, IDbTransaction transaction)
+        {
+            PrepareCommand(commandText, commandType, commandTimeout, parameters, null, transaction);
+        }
+
         public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout)
         {
-            PrepareCommand(commandText, commandType, commandTimeout, null, null);
+            PrepareCommand(commandText, commandType, commandTimeout, default(IDbConnection), null);
         }
 
         public void PrepareCommand(string commandText, CommandType commandType)
         {
-            PrepareCommand(commandText, commandType, -1, null, null);
+            PrepareCommand(commandText, commandType, -1, default(IDbConnection), null);
         }
 
         public void PrepareCommand(string commandText)
         {
-            PrepareCommand(commandText, CommandType.Text, -1, null, null);
+            PrepareCommand(commandText, CommandType.Text, -1, default(IDbConnection), null);
         }
 
         public void PrepareCommand()
         {
-            PrepareCommand(string.Empty, CommandType.Text, -1, null, null);
+            PrepareCommand(string.Empty, CommandType.Text, -1, default(IDbConnection), null);
         }
 
         public void PrepareStoredProcedureCommand(string commandText, int commandTimeout,
@@ -220,28 +247,29 @@ namespace TA.PracticeService.DbHelperPractice
 
         public IDataReader ExecuteReader()
         {
-            InitializeConnection();
-            return DbCommand.ExecuteReader();
+            return ExecuteReader(string.Empty);
         }
 
         public IDataReader ExecuteReader(string connectionString)
         {
-            InitializeConnection(connectionString);
-            return DbCommand.ExecuteReader();
+            return ExecuteReader(connectionString, CommandBehavior.Default);
         }
 
         public IDataReader ExecuteReader(CommandBehavior behavior)
         {
-            InitializeConnection();
-            return DbCommand.ExecuteReader(behavior);
+            return ExecuteReader(string.Empty, behavior);
         }
 
         public IDataReader ExecuteReader(string connectionString, CommandBehavior behavior)
         {
             InitializeConnection(connectionString);
-            return DbCommand.ExecuteReader(behavior);
+            return GetReader(behavior);
         }
 
+        private IDataReader GetReader(CommandBehavior behavior)
+        {
+            return DbCommand.ExecuteReader(behavior);
+        }
         public object ExecuteScalar()
         {
             InitializeConnection();
@@ -254,6 +282,67 @@ namespace TA.PracticeService.DbHelperPractice
             return DbCommand.ExecuteScalar();
         }
 
+        public DataTable ExecuteReaderAndGetDataResult()
+        {
+            var resultTable = new DataTable();
+            InitializeConnection();
+            using (DbConnection)
+            {
+                using (var reader = ExecuteReader())
+                {
+                    resultTable.Load(reader);
+                    return resultTable;
+                }
+            }
+        }
+
+        public DataTable ExecuteReaderAndGetDataResult(string connectionString, CommandBehavior behavior, string commandText,
+            CommandType commandType, int commandTimeout, IDbConnection connection)
+        {
+            var resultTable = new DataTable();
+            InitializeConnection(connectionString);
+            PrepareCommand(commandText, commandType, commandTimeout, connection);
+            using (DbConnection)
+            {
+                using (var reader = GetReader(behavior))
+                {
+                    resultTable.Load(reader);
+                    return resultTable;
+                }
+            }
+        }
+
+        public DataTable ExecuteReaderAndGetDataResult(string connectionString, CommandBehavior behavior, string commandText,
+            CommandType commandType, int commandTimeout, IDbConnection connection, IDbTransaction transaction)
+        {
+            var resultTable = new DataTable();
+            InitializeConnection(connectionString);
+            PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
+            using (DbConnection)
+            {
+                using (var reader = GetReader(behavior))
+                {
+                    resultTable.Load(reader);
+                    return resultTable;
+                }
+            }
+        }
+
+        public DataSet ExecuteReaderAndGetDataSetResult(string connectionString, string commandText, CommandType commandType,
+            int commandTimeout, IDbConnection connection, IDbTransaction transaction)
+        {
+            var resultSet = new DataSet();
+            InitializeConnection(connectionString);
+            PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
+            using (DbConnection)
+            {
+                IDbDataAdapter adapter = _dbFactory.CreateDataAdapter();
+                adapter.SelectCommand = DbCommand;
+                adapter.Fill(resultSet);
+                return resultSet;
+            }
+        }
+
         private void InitializeConnection(string connectionString)
         {
             if (DbConnection == null)
@@ -262,8 +351,11 @@ namespace TA.PracticeService.DbHelperPractice
             }
             else
             {
-                DbConnection.ConnectionString = connectionString;
+                if (!string.IsNullOrWhiteSpace(connectionString))
+                    DbConnection.ConnectionString = connectionString;
             }
+            if (new[] { ConnectionState.Broken, ConnectionState.Closed }.Contains(DbConnection.State))
+                DbConnection.Open();
         }
 
         private void InitializeConnection()
