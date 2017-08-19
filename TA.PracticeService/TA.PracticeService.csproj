@@ -62,6 +62,7 @@
     <Compile Include="DataStructure\QueuePractice.cs" />
     <Compile Include="DataStructure\StackPractice.cs" />
     <Compile Include="DbHelperPractice\DatabaseFactorySectionHandler.cs" />
+    <Compile Include="DbHelperPractice\DatabaseQueryBuilderModel.cs" />
     <Compile Include="DbHelperPractice\DatabaseQueryRepository.cs" />
     <Compile Include="EF Bulk Practice\EfBulkPractice.cs" />
     <Compile Include="EF Bulk Practice\Models\Department.cs" />

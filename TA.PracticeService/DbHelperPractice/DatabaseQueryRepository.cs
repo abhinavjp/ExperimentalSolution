@@ -6,399 +6,213 @@ using System.Threading.Tasks;
 using System.Data.Common;
 using System.Data;
 using System.Configuration;
+using System.Data.Entity;
 
 namespace TA.PracticeService.DbHelperPractice
 {
-    public class DatabaseQueryRepository : IDisposable
+    public class DatabaseQueryRepository<T> : DatabaseQueryRepository where T : DbContext
     {
-        private readonly string _dataProvider;
-        private DbProviderFactory _dbFactory;
-        public string ConnectionString
+        public DatabaseQueryRepository(T context) : base(context.Database.Connection.ConnectionString)
         {
-            get
-            {
-                if (DbConnection != null)
-                    return DbConnection.ConnectionString;
-                return string.Empty;
-            }
-            set
-            {
-                DbConnection.ConnectionString = value;
-            }
+
         }
-        public IDbConnection DbConnection { get; private set; }
-        public IDbCommand DbCommand { get; private set; }
-        public IEnumerable<IDbDataParameter> DbParameters
-        {
-            get
-            {
-                return DbCommand.Parameters as IEnumerable<IDbDataParameter>;
-            }
-        }
-        public int ConnectionTimeout
-        {
-            get
-            {
-                if (DbConnection != null)
-                    return DbConnection.ConnectionTimeout;
-                return -1;
-            }
-        }
-        public int CommandTimeout
-        {
-            get
-            {
-                if (DbCommand != null) return DbCommand.CommandTimeout;
-                return -1;
-            }
-            set
-            {
-                DbCommand.CommandTimeout = value;
-            }
-        }
+    }
+
+    public class DatabaseQueryRepository
+    {
+        protected string _connectionString;
 
         #region Constructors
-        public DatabaseQueryRepository(string dataProvider)
+        public DatabaseQueryRepository() : this(string.Empty)
         {
-            _dataProvider = dataProvider;
-            _dbFactory = DbProviderFactories.GetFactory(_dataProvider);
         }
 
-        public DatabaseQueryRepository(string dataProvider, string connectionString) : this(dataProvider)
+        public DatabaseQueryRepository(string connectionString)
         {
-            ConnectionString = connectionString;
-        }
-
-        public DatabaseQueryRepository(DbProviderFactory dataFactory)
-        {
-            _dbFactory = dataFactory;
-        } 
-        #endregion
-
-        #region Connection Preparation
-        public IDbConnection PrepareConnection()
-        {
-            return PrepareConnection(string.Empty);
-        }
-
-        public IDbConnection PrepareConnection(string connectionString)
-        {
-            DbConnection = _dbFactory.CreateConnection();
-            ConnectionString = connectionString;
-            if (!string.IsNullOrWhiteSpace(connectionString))
-                DbConnection.ConnectionString = ConnectionString;
-            return DbConnection;
-        }
-
-        public IDbConnection PrepareConnection(IDbConnection dbConnection)
-        {
-            DbConnection = dbConnection;
-            return DbConnection;
+            _connectionString = connectionString;
         }
         #endregion
 
         #region Command Preparation
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
+        protected IDbCommand PrepareCommand(DatabaseQueryBuilderModel dbQueryBuilderModel,
             IDbConnection connection, IDbTransaction transaction)
         {
-            DbCommand = _dbFactory.CreateCommand();
-            DbCommand.CommandText = commandText;
-            DbCommand.CommandType = commandType;
+            IDbCommand dbCommand = dbQueryBuilderModel.DbFactory.CreateCommand();
+            dbCommand.CommandText = dbQueryBuilderModel.Query;
+            dbCommand.CommandType = dbQueryBuilderModel.CommandType;
             if (connection != null)
-                DbCommand.Connection = connection;
+                dbCommand.Connection = connection;
             if (transaction != null)
-                DbCommand.Transaction = transaction;
-            if (commandTimeout != -1)
-                DbCommand.CommandTimeout = commandTimeout;
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
-            IDbConnection connection)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, connection, null);
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
-            IDbTransaction transaction)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, null, null, transaction);
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
-            IEnumerable<IDbDataParameter> parameters, IDbConnection connection, IDbTransaction transaction)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
-            if (parameters == null || !parameters.Any())
-                return;
-            foreach (var parameter in parameters)
-            {
-                var commandParameter = DbCommand.CreateParameter();
-                commandParameter = parameter;
-            }
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
-            IEnumerable<IDbDataParameter> parameters, IDbConnection connection)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, parameters, connection, null);
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout,
-            IEnumerable<IDbDataParameter> parameters, IDbTransaction transaction)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, parameters, null, transaction);
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType, int commandTimeout)
-        {
-            PrepareCommand(commandText, commandType, commandTimeout, default(IDbConnection), null);
-        }
-
-        public void PrepareCommand(string commandText, CommandType commandType)
-        {
-            PrepareCommand(commandText, commandType, -1, default(IDbConnection), null);
-        }
-
-        public void PrepareCommand(string commandText)
-        {
-            PrepareCommand(commandText, CommandType.Text, -1, default(IDbConnection), null);
-        }
-
-        public void PrepareCommand()
-        {
-            PrepareCommand(string.Empty, CommandType.Text, -1, default(IDbConnection), null);
-        }
-
-        #region SpCommand Preparation
-        public void PrepareStoredProcedureCommand(string commandText, int commandTimeout,
-            IDbConnection connection, IDbTransaction transaction)
-        {
-            PrepareCommand(commandText, CommandType.StoredProcedure, commandTimeout, connection, transaction);
-        }
-
-        public void PrepareStoredProcedureCommand(string commandText, int commandTimeout,
-            IEnumerable<IDbDataParameter> parameters, IDbConnection connection, IDbTransaction transaction)
-        {
-            PrepareStoredProcedureCommand(commandText, commandTimeout, connection, transaction);
-            foreach (var parameter in parameters)
-            {
-                var commandParameter = DbCommand.CreateParameter();
-                commandParameter = parameter;
-            }
-        }
-
-        public void PrepareStoredProcedureCommand(string commandText, int commandTimeout)
-        {
-            PrepareStoredProcedureCommand(commandText, commandTimeout, null, null);
-        }
-
-        public void PrepareStoredProcedureCommand(string commandText)
-        {
-            PrepareStoredProcedureCommand(commandText, -1, null, null);
-        }
-
-        public void PrepareStoredProcedureCommand()
-        {
-            PrepareStoredProcedureCommand(string.Empty, -1, null, null);
-        }
-        #endregion
-        #endregion
-
-        #region Parameter
-        public IDbDataParameter AddParameter(string parameterName, object value)
-        {
-            return AddParameter(parameterName, value, null, null);
-        }
-
-        public IDbDataParameter AddParameter(string parameterName, DbType dbType)
-        {
-            return AddParameter(parameterName, null, dbType, null);
-        }
-
-        public IDbDataParameter AddParameter(string parameterName, object value, DbType dbType)
-        {
-            return AddParameter(parameterName, value, dbType, null);
-        }
-
-        public IDbDataParameter AddParameter(string parameterName, object value, ParameterDirection direction)
-        {
-            return AddParameter(parameterName, value, null, direction);
-        }
-
-        public IDbDataParameter AddParameter(string parameterName, object value, DbType? dbType, ParameterDirection? direction)
-        {
-            if (DbCommand == null)
-                PrepareCommand();
-            var parameter = DbCommand.CreateParameter();
-            parameter.ParameterName = parameterName;
-            parameter.Value = value;
-            if (dbType.HasValue)
-                parameter.DbType = dbType.Value;
-            if (direction.HasValue)
-                parameter.Direction = direction.Value;
-            return parameter;
-        }
-
-        public void AddParameter(IDbDataParameter parameter)
-        {
-            var commandParameter = DbCommand.CreateParameter();
-            commandParameter = parameter;
-        }
-
-        public void AddParameter(IEnumerable<IDbDataParameter> parameters)
-        {
-            foreach(var parameter in parameters)
-            {
-                AddParameter(parameter);
-            }
+                dbCommand.Transaction = transaction;
+            if (dbQueryBuilderModel.CommandTimeout != -1)
+                dbCommand.CommandTimeout = dbQueryBuilderModel.CommandTimeout;
+            return dbCommand;
         }
         #endregion
 
-        public int ExecuteNonQuery()
+        #region Just Execute Query
+        public virtual int ExecuteNonQuery(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection, IDbTransaction transaction)
         {
-            InitializeConnection();
-            using (DbConnection)
+            using (var command = PrepareCommand(dbQueryBuilderModel, connection, transaction))
             {
-                DbConnection.Open();
-                return DbCommand.ExecuteNonQuery();
+                OpenConnection(connection);
+                return command.ExecuteNonQuery();
             }
         }
 
-        public int ExecuteNonQuery(string connectionString)
+        public virtual int ExecuteNonQuery(DatabaseQueryBuilderModel dbQueryBuilderModel, string connectionString, IDbTransaction transaction)
         {
-            InitializeConnection(connectionString);
-            using (DbConnection)
+            using (var connection = InitializeConnection(dbQueryBuilderModel, connectionString))
             {
-                DbConnection.Open();
-                return DbCommand.ExecuteNonQuery();
+                return ExecuteNonQuery(dbQueryBuilderModel, connection, transaction);
             }
         }
 
-        public IDataReader ExecuteReader()
+        public virtual int ExecuteNonQuery(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection)
         {
-            return ExecuteReader(string.Empty);
+            return ExecuteNonQuery(dbQueryBuilderModel, connection, null);
         }
 
-        public IDataReader ExecuteReader(string connectionString)
+        public virtual int ExecuteNonQuery(DatabaseQueryBuilderModel dbQueryBuilderModel)
         {
-            return ExecuteReader(connectionString, CommandBehavior.Default);
+            return ExecuteNonQuery(dbQueryBuilderModel, _connectionString, null);
         }
+        #endregion
 
-        public IDataReader ExecuteReader(CommandBehavior behavior)
+        #region Execute Query and Get DataTable
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, CommandBehavior commandBehaviour, IDbConnection connection, IDbTransaction transaction)
         {
-            return ExecuteReader(string.Empty, behavior);
-        }
-
-        public IDataReader ExecuteReader(string connectionString, CommandBehavior behavior)
-        {
-            InitializeConnection(connectionString);
-            return GetReader(behavior);
-        }
-
-        private IDataReader GetReader(CommandBehavior behavior)
-        {
-            return DbCommand.ExecuteReader(behavior);
-        }
-        public object ExecuteScalar()
-        {
-            InitializeConnection();
-            return DbCommand.ExecuteScalar();
-        }
-
-        public object ExecuteScalar(string connectionString)
-        {
-            InitializeConnection(connectionString);
-            return DbCommand.ExecuteScalar();
-        }
-
-        public DataTable ExecuteReaderAndGetDataResult()
-        {
-            var resultTable = new DataTable();
-            InitializeConnection();
-            using (DbConnection)
+            var resultDataTable = new DataTable();
+            using (var command = PrepareCommand(dbQueryBuilderModel, connection, transaction))
             {
-                using (var reader = ExecuteReader())
+                OpenConnection(connection);
+                using (var reader = command.ExecuteReader(commandBehaviour))
                 {
-                    resultTable.Load(reader);
-                    return resultTable;
+                    resultDataTable.Load(reader);
+                    return resultDataTable;
                 }
             }
         }
 
-        public DataTable ExecuteReaderAndGetDataResult(string connectionString, CommandBehavior behavior, string commandText,
-            CommandType commandType, int commandTimeout, IDbConnection connection)
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection, IDbTransaction transaction)
         {
-            var resultTable = new DataTable();
-            InitializeConnection(connectionString);
-            PrepareCommand(commandText, commandType, commandTimeout, connection);
-            using (DbConnection)
+            return GetQueryResult(dbQueryBuilderModel, CommandBehavior.Default, connection, transaction);
+        }
+
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, CommandBehavior commandBehaviour, string connectionString, IDbTransaction transaction)
+        {
+            using (var connection = InitializeConnection(dbQueryBuilderModel, connectionString))
             {
-                using (var reader = GetReader(behavior))
-                {
-                    resultTable.Load(reader);
-                    return resultTable;
-                }
+                return GetQueryResult(dbQueryBuilderModel, commandBehaviour, connection, transaction);
             }
         }
 
-        public DataTable ExecuteReaderAndGetDataResult(string connectionString, CommandBehavior behavior, string commandText,
-            CommandType commandType, int commandTimeout, IDbConnection connection, IDbTransaction transaction)
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, string connectionString, IDbTransaction transaction)
         {
-            var resultTable = new DataTable();
-            InitializeConnection(connectionString);
-            PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
-            using (DbConnection)
+            return GetQueryResult(dbQueryBuilderModel, CommandBehavior.Default, connectionString, transaction);
+        }
+
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection)
+        {
+            return GetQueryResult(dbQueryBuilderModel, connection, null);
+        }
+
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, CommandBehavior commandBehaviour, IDbConnection connection)
+        {
+            return GetQueryResult(dbQueryBuilderModel, commandBehaviour, connection, null);
+        }
+
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel)
+        {
+            return GetQueryResult(dbQueryBuilderModel, _connectionString, null);
+        }
+
+        public virtual DataTable GetQueryResult(DatabaseQueryBuilderModel dbQueryBuilderModel, CommandBehavior commandBehaviour)
+        {
+            return GetQueryResult(dbQueryBuilderModel, commandBehaviour, _connectionString, null);
+        }
+        #endregion
+
+        #region Execute Query and Get DataSet
+        public virtual DataSet GetQuerySetResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection, IDbTransaction transaction)
+        {
+            var resultDataSet = new DataSet();
+            var dataAdapter = dbQueryBuilderModel.DbFactory.CreateDataAdapter();
+            using (var command = PrepareCommand(dbQueryBuilderModel, connection, transaction))
             {
-                using (var reader = GetReader(behavior))
-                {
-                    resultTable.Load(reader);
-                    return resultTable;
-                }
+                OpenConnection(connection);
+                dataAdapter.SelectCommand = command as DbCommand;
+                dataAdapter.Fill(resultDataSet);
+                return resultDataSet;
             }
         }
 
-        public DataSet ExecuteReaderAndGetDataSetResult(string connectionString, string commandText, CommandType commandType,
-            int commandTimeout, IDbConnection connection, IDbTransaction transaction)
+        public virtual DataSet GetQuerySetResult(DatabaseQueryBuilderModel dbQueryBuilderModel, string connectionString, IDbTransaction transaction)
         {
-            var resultSet = new DataSet();
-            InitializeConnection(connectionString);
-            PrepareCommand(commandText, commandType, commandTimeout, connection, transaction);
-            using (DbConnection)
+            using (var connection = InitializeConnection(dbQueryBuilderModel, connectionString))
             {
-                IDbDataAdapter adapter = _dbFactory.CreateDataAdapter();
-                adapter.SelectCommand = DbCommand;
-                adapter.Fill(resultSet);
-                return resultSet;
+                return GetQuerySetResult(dbQueryBuilderModel, connection, transaction);
             }
         }
 
-        private void InitializeConnection(string connectionString)
+        public virtual DataSet GetQuerySetResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection)
         {
-            if (DbConnection == null)
-            {
-                PrepareConnection(connectionString);
-            }
-            else
-            {
-                if (!string.IsNullOrWhiteSpace(connectionString))
-                    DbConnection.ConnectionString = connectionString;
-            }
-            if (new[] { ConnectionState.Broken, ConnectionState.Closed }.Contains(DbConnection.State))
-                DbConnection.Open();
+            return GetQuerySetResult(dbQueryBuilderModel, connection, null);
         }
 
-        private void InitializeConnection()
+        public virtual DataSet GetQuerySetResult(DatabaseQueryBuilderModel dbQueryBuilderModel)
         {
-            InitializeConnection(string.Empty);
+            return GetQuerySetResult(dbQueryBuilderModel, _connectionString, null);
+        }
+        #endregion
+
+        #region Execute Scalar and Get Scalar Data
+        public virtual object GetQueryScalarResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection, IDbTransaction transaction)
+        {
+            using (var command = PrepareCommand(dbQueryBuilderModel, connection, transaction))
+            {
+                OpenConnection(connection);
+                return command.ExecuteScalar();
+            }
         }
 
-        public void Dispose()
+        public virtual object GetQueryScalarResult(DatabaseQueryBuilderModel dbQueryBuilderModel, string connectionString, IDbTransaction transaction)
         {
-            if (DbCommand != null)
-                DbCommand.Dispose();
-            if (DbConnection != null)
-                DbConnection.Dispose();
-            GC.SuppressFinalize(this);
+            using (var connection = InitializeConnection(dbQueryBuilderModel, connectionString))
+            {
+                return GetQueryScalarResult(dbQueryBuilderModel, connection, transaction);
+            }
+        }
+
+        public virtual object GetQueryScalarResult(DatabaseQueryBuilderModel dbQueryBuilderModel, IDbConnection connection)
+        {
+            return GetQueryScalarResult(dbQueryBuilderModel, connection, null);
+        }
+
+        public virtual object GetQueryScalarResult(DatabaseQueryBuilderModel dbQueryBuilderModel)
+        {
+            return GetQueryScalarResult(dbQueryBuilderModel, _connectionString, null);
+        }
+        #endregion
+
+        protected IDbConnection InitializeConnection(DatabaseQueryBuilderModel dbQueryBuilderModel, string connectionString)
+        {
+            IDbConnection connection = dbQueryBuilderModel.DbFactory.CreateConnection();
+
+            if (!string.IsNullOrWhiteSpace(connectionString))
+                connection.ConnectionString = connectionString;
+            return connection;
+        }
+
+        protected IDbConnection InitializeConnection(DatabaseQueryBuilderModel dbQueryBuilderModel)
+        {
+            return InitializeConnection(dbQueryBuilderModel, string.Empty);
+        }
+
+        protected void OpenConnection(IDbConnection connection)
+        {
+            if (new[] { ConnectionState.Broken, ConnectionState.Closed }.Contains(connection.State))
+                connection.Open();
         }
     }
 }
