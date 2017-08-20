@@ -83,30 +83,89 @@ namespace TA.PracticeService.DbHelperPractice
             CommandTimeout = commandTimeout;
         }
 
+        public DatabaseQueryBuilderModel(DbConnection connection) : this(connection, string.Empty)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, IEnumerable<IDbDataParameter> dbParameters) : this(connection, string.Empty, dbParameters)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query) : this(connection, query, CommandType.Text, DefaultTimeout)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, IEnumerable<IDbDataParameter> dbParameters) : this(connection, query, CommandType.Text, DefaultTimeout, dbParameters)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, int commandTimeout) : this(connection, query, CommandType.Text, commandTimeout)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, int commandTimeout, IEnumerable<IDbDataParameter> dbParameters) : this(connection, query, CommandType.Text, commandTimeout, dbParameters)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, CommandType commandType) : this(connection, query, commandType, DefaultTimeout)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, CommandType commandType, IEnumerable<IDbDataParameter> dbParameters) : this(connection, query, commandType, DefaultTimeout, dbParameters)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, CommandType commandType, int commandTimeout)
+            : this(connection, query, commandType, commandTimeout, null)
+        {
+
+        }
+
+        public DatabaseQueryBuilderModel(DbConnection connection, string query, CommandType commandType, int commandTimeout, IEnumerable<IDbDataParameter> dbParameters)
+        {
+            if (connection == null)
+            {
+                throw new ArgumentNullException(nameof(connection), $"DbConnection needs to specified");
+            }
+            _dbFactory = DbProviderFactories.GetFactory(connection);
+            Query = query;
+            CommandType = commandType;
+            DbParameters = dbParameters?.ToList();
+            CommandTimeout = commandTimeout;
+        }
+
         #endregion
 
         #region Parameter
-        public IDbDataParameter AddParameter(string parameterName, object value)
+        public virtual IDbDataParameter AddParameter(string parameterName, object value)
         {
             return AddParameter(parameterName, value, null, null);
         }
 
-        public IDbDataParameter AddParameter(string parameterName, DbType dbType)
+        public virtual IDbDataParameter AddParameter(string parameterName, DbType dbType)
         {
             return AddParameter(parameterName, null, dbType, null);
         }
 
-        public IDbDataParameter AddParameter(string parameterName, object value, DbType dbType)
+        public virtual IDbDataParameter AddParameter(string parameterName, object value, DbType dbType)
         {
             return AddParameter(parameterName, value, dbType, null);
         }
 
-        public IDbDataParameter AddParameter(string parameterName, object value, ParameterDirection direction)
+        public virtual IDbDataParameter AddParameter(string parameterName, object value, ParameterDirection direction)
         {
             return AddParameter(parameterName, value, null, direction);
         }
 
-        public IDbDataParameter AddParameter(string parameterName, object value, DbType? dbType, ParameterDirection? direction)
+        public virtual IDbDataParameter AddParameter(string parameterName, object value, DbType? dbType, ParameterDirection? direction)
         {
             var parameter = GenerateParameter(parameterName, value, dbType, direction);
             DbParameters.Add(parameter);
@@ -114,37 +173,37 @@ namespace TA.PracticeService.DbHelperPractice
             return parameter;
         }
 
-        public IDbDataParameter GenerateParameter()
+        public virtual IDbDataParameter GenerateParameter()
         {
             return GenerateParameter(string.Empty, null, null, null);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName)
+        public virtual IDbDataParameter GenerateParameter(string parameterName)
         {
             return GenerateParameter(parameterName, null, null, null);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName, object value)
+        public virtual IDbDataParameter GenerateParameter(string parameterName, object value)
         {
             return GenerateParameter(parameterName, value, null, null);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName, DbType dbType)
+        public virtual IDbDataParameter GenerateParameter(string parameterName, DbType dbType)
         {
             return GenerateParameter(parameterName, null, dbType, null);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName, object value, DbType dbType)
+        public virtual IDbDataParameter GenerateParameter(string parameterName, object value, DbType dbType)
         {
             return GenerateParameter(parameterName, value, dbType, null);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName, object value, ParameterDirection direction)
+        public virtual IDbDataParameter GenerateParameter(string parameterName, object value, ParameterDirection direction)
         {
             return GenerateParameter(parameterName, value, null, direction);
         }
 
-        public IDbDataParameter GenerateParameter(string parameterName, object value, DbType? dbType, ParameterDirection? direction)
+        public virtual IDbDataParameter GenerateParameter(string parameterName, object value, DbType? dbType, ParameterDirection? direction)
         {
             IDbDataParameter parameter = _dbFactory.CreateParameter();
             parameter.ParameterName = parameterName;
@@ -156,13 +215,13 @@ namespace TA.PracticeService.DbHelperPractice
             return parameter;
         }
 
-        public void AddParameter(IDbDataParameter parameter)
+        public virtual void AddParameter(IDbDataParameter parameter)
         {
             IDbDataParameter commandParameter = _dbFactory.CreateParameter();
             commandParameter = parameter;
         }
 
-        public void AddParameter(IEnumerable<IDbDataParameter> parameters)
+        public virtual void AddParameter(IEnumerable<IDbDataParameter> parameters)
         {
             foreach (var parameter in parameters)
             {
