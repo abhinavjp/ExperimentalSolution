@@ -12,8 +12,8 @@ namespace TA.ConsoleApp
     {
         public static void Main(string[] args)
         {
-            LinkedListPractice.Run();
-            StackPractice.Run();
+            //LinkedListPractice.Run();
+            //StackPractice.Run();
 
             EfBulkPractice.Run();
 

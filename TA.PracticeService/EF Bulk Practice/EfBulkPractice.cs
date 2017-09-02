@@ -1,8 +1,11 @@
-﻿using System;
+﻿using RepositoryFoundation.Helper.ExpressionBuilder;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
 using TA.PracticeService.EF_Bulk_Practice.Models;
@@ -19,22 +22,23 @@ namespace TA.PracticeService.EF_Bulk_Practice
                 {
                     try
                     {
-                        using (var context = new EmployeeContext())
-                        {
-                            Console.Clear();
-                            const int records = 1000;
-                            InsertEmployee(context, records);
-                            //UpdateEmployees(context, records);
-                            //DeleteEmployees(context, records);
-                        }
+                        //using (var context = new EmployeeContext())
+                        //{
+                        //    Console.Clear();
+                        //    const int records = 10000;
+                        //    InsertEmployee(context, records);
+                        //    //UpdateEmployees(context, records);
+                        //    //DeleteEmployees(context, records);
+                        //}
 
-                        using (var context = new EmployeeContext())
-                        {
 
-                            Console.Clear();
-                            const int records = 1000;
-                            InsertDepartments(context, records);
-                        }
+                        //using (var context = new EmployeeContext())
+                        //{
+
+                        //    Console.Clear();
+                        //    const int records = 1000;
+                        //    InsertDepartments(context, records);
+                        //}
                         scope.Complete();
                     }
                     catch (TransactionAbortedException)
@@ -42,6 +46,29 @@ namespace TA.PracticeService.EF_Bulk_Practice
                         Console.ForegroundColor = ConsoleColor.DarkYellow;
                         Console.Write("Oh No!!!! Error while disposing transaction");
                     }
+                }
+
+                var employees = new List<TestMe>();
+                for (var index = 0; index < 1000; index++)
+                {
+                    var employee = new TestMe
+                    {
+                        Forename = $"TestFirstName{index + 1}",
+                        PayrollId = $"{index + 2}"
+                    };
+                    employees.Add(employee);
+                }
+
+                var employeeArray = employees.ToArray();
+                var whereCondition = $"(({string.Join(") OR (", employeeArray.Select(s => $"Forename = '{s.Forename}' OR PayrollId = '{s.PayrollId}'"))}))";
+                using (var context = new EmployeeContext())
+                {
+                    var records = context.Employees.SqlQuery($"SELECT * FROM dbo.Employees WHERE {whereCondition}").ToList();
+                    //var records = context.Employees.Join(employees, 
+                    //        (emp) => new { emp.Forename, emp.PayrollId }, 
+                    //        (empL) => new { empL.Forename, empL.PayrollId },
+                    //        (emp, empL)=>new { emp, empL })
+                    //        .Select(w=>w.emp).ToList();
                 }
             }
             catch (Exception ex)
@@ -151,4 +178,12 @@ namespace TA.PracticeService.EF_Bulk_Practice
             Console.WriteLine($"Total Time Taken To Insert {records} records: {insertStopwatch.ElapsedMilliseconds}");
         }
     }
+
+    public class TestMe
+    {
+        public string Forename { get; set; }
+        public string PayrollId { get; set; }
+    }
+
+
 }
