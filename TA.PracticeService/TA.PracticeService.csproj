@@ -76,12 +76,59 @@
     <Compile Include="EF Bulk Practice\Models\Employee.cs" />
     <Compile Include="EF Bulk Practice\Models\EmployeeContext.cs" />
     <Compile Include="EF Bulk Practice\PredicateBuilder.cs" />
+    <Compile Include="EFConnectionStringHelper\EntityFrameworkConnectionBuilder.cs" />
+    <Compile Include="EFConnectionStringHelper\EntityFrameworkModelBuilder.cs" />
+    <Compile Include="EFConnectionStringHelper\IEntityFrameworkConnectionBuilder.cs" />
+    <Compile Include="EFConnectionStringHelper\Model\AccountRegister.cs">
+      <DependentUpon>TestEntity.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EFConnectionStringHelper\Model\TestAccessDatabase.cs" />
+    <Compile Include="EFConnectionStringHelper\Model\TestEntity.Context.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestEntity.Context.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EFConnectionStringHelper\Model\TestEntity.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestEntity.tt</DependentUpon>
+    </Compile>
+    <Compile Include="EFConnectionStringHelper\Model\TestEntity.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>TestEntity.edmx</DependentUpon>
+    </Compile>
+    <Compile Include="EFConnectionStringHelper\Model\TransactionType.cs">
+      <DependentUpon>TestEntity.tt</DependentUpon>
+    </Compile>
     <Compile Include="ExcelTest\ExcelPractice.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <EntityDeploy Include="EFConnectionStringHelper\Model\TestEntity.edmx">
+      <Generator>EntityModelCodeGenerator</Generator>
+      <LastGenOutput>TestEntity.Designer.cs</LastGenOutput>
+    </EntityDeploy>
+    <None Include="EFConnectionStringHelper\Model\TestEntity.edmx.diagram">
+      <DependentUpon>TestEntity.edmx</DependentUpon>
+    </None>
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="EFConnectionStringHelper\Model\TestEntity.Context.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>TestEntity.edmx</DependentUpon>
+      <LastGenOutput>TestEntity.Context.cs</LastGenOutput>
+    </Content>
+    <Content Include="EFConnectionStringHelper\Model\TestEntity.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <DependentUpon>TestEntity.edmx</DependentUpon>
+      <LastGenOutput>TestEntity.cs</LastGenOutput>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
