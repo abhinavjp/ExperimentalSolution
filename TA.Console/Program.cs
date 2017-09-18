@@ -17,8 +17,8 @@ namespace TA.ConsoleApp
             //StackPractice.Run();
 
 
-            TestAccessDatabase.Run();
-            //EfBulkPractice.Run();
+            //TestAccessDatabase.Run();
+            EfBulkPractice.Run();
 
             Console.ReadKey();
         }

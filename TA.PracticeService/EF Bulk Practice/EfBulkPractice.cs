@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Transactions;
-using TA.PracticeService.EF_Bulk_Practice.Models;
+using TA.PracticeService.CodeFirst.Entities;
 
 namespace TA.PracticeService.EF_Bulk_Practice
 {
@@ -22,23 +22,23 @@ namespace TA.PracticeService.EF_Bulk_Practice
                 {
                     try
                     {
-                        //using (var context = new EmployeeContext())
-                        //{
-                        //    Console.Clear();
-                        //    const int records = 10000;
-                        //    InsertEmployee(context, records);
-                        //    //UpdateEmployees(context, records);
-                        //    //DeleteEmployees(context, records);
-                        //}
+                        using (var context = new EmployeeContext())
+                        {
+                            Console.Clear();
+                            const int records = 10000;
+                            InsertEmployee(context, records);
+                            //UpdateEmployees(context, records);
+                            //DeleteEmployees(context, records);
+                        }
 
 
-                        //using (var context = new EmployeeContext())
-                        //{
+                        using (var context = new EmployeeContext())
+                        {
 
-                        //    Console.Clear();
-                        //    const int records = 1000;
-                        //    InsertDepartments(context, records);
-                        //}
+                            Console.Clear();
+                            const int records = 1000;
+                            InsertDepartments(context, records);
+                        }
                         scope.Complete();
                     }
                     catch (TransactionAbortedException)
@@ -63,6 +63,7 @@ namespace TA.PracticeService.EF_Bulk_Practice
                 var whereCondition = $"(({string.Join(") OR (", employeeArray.Select(s => $"Forename = '{s.Forename}' OR PayrollId = '{s.PayrollId}'"))}))";
                 using (var context = new EmployeeContext())
                 {
+                    var testRecords = context.Employees.ToList();
                     var records = context.Employees.SqlQuery($"SELECT * FROM dbo.Employees WHERE {whereCondition}").ToList();
                     //var records = context.Employees.Join(employees, 
                     //        (emp) => new { emp.Forename, emp.PayrollId }, 
