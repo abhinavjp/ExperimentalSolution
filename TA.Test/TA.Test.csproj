@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ExcelTest.cs" />
+    <Compile Include="JustLikeTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ExpressionTest.cs" />
     <Compile Include="ComparerTest.cs" />
